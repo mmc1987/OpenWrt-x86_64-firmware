@@ -1,4 +1,4 @@
-name: OpenWrt Builder
+name: Test OpenWrt Builder
 
 on:
   repository_dispatch:
