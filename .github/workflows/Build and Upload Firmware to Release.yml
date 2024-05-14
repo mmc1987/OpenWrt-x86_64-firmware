@@ -21,51 +21,14 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
-      - name: Checkout source
-        uses: actions/checkout@v2
-        with:
-          repository: ${{ env.REPO_URL }}
-          ref: ${{ env.REPO_BRANCH }}
-
-      - name: Set up feeds
-        run: |
-          ./scripts/feeds update -a
-          ./scripts/feeds install -a
-
-      - name: Custom scripts part 1
-        run: |
-          chmod +x ${{ env.DIY_P1_SH }}
-          ./${{ env.DIY_P1_SH }}
-
-      - name: Copy configuration
-        run: cp ${{ env.CONFIG_FILE }} .config
-
-      - name: Build firmware
-        run: |
-          make defconfig
-          make -j$(nproc)
-
-      - name: Custom scripts part 2
-        run: |
-          chmod +x ${{ env.DIY_P2_SH }}
-          ./${{ env.DIY_P2_SH }}
-
-      - name: Set release tag
-        id: tag
-        run: |
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            echo "::set-output name=release_tag::$(date +'%Y%m%d%H%M')"
-          else
-            echo "::set-output name=release_tag::${{ github.event.client_payload.tag }}"
-          fi
 
       - name: Upload firmware to release
-        uses: softprops/action-gh-release@v1
-        if: steps.tag.outputs.release_tag != ''
+      
+        if: 1=1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ steps.tag.outputs.release_tag }}
-          release_name: Release ${{ steps.tag.outputs.release_tag }}
+          tag_name: test
+          release_name: Release 122334
           body_path: release.txt
           files: bin/targets/*/*/openwrt-*.bin
