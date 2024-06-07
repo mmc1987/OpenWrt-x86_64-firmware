@@ -136,3 +136,11 @@ config redirect
 	option dest_ip '192.168.1.101'
 	option dest_port '22'
 
+config redirect                                 
+        option dest 'lan'                       
+        option target 'DNAT'                    
+        option name 'mac'                       
+        option src 'wan'                        
+        option src_dport '5900'                 
+        option dest_ip '192.168.1.192'          
+        option dest_port '5900' 
