@@ -1,0 +1,26 @@
+
+config interface 'loopback'
+	option device 'lo'
+	option proto 'static'
+	option ipaddr '127.0.0.1'
+	option netmask '255.0.0.0'
+
+config globals 'globals'
+	option ula_prefix 'fda6:5080:b975::/48'
+
+config interface 'lan'
+	option device 'eth0'
+	option proto 'static'
+	option ipaddr '192.168.1.1'
+	option netmask '255.255.255.0'
+	option ip6assign '60'
+	list dns '192.168.1.1'
+
+config interface 'wan'
+	option proto 'pppoe'
+	option device 'eth0'
+	option username '02106039152'
+	option password '123456'
+	option ipv6 'auto'
+	option mtu '1492'
+
