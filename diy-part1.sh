@@ -18,4 +18,4 @@
 # echo 'src-git passwall https://github.com/xiaorouji/openwrt-passwall' >>feeds.conf.default
 # echo 'src-git zerotier https://github.com/mwarning/zerotier-openwrt.git' >>feeds.conf.default
 # git clone --depth=1 https://github.com/zhengmz/luci-app-zerotier.git feeds/luci/applications/luci-app-zerotier
-echo 'src-git zerotier https://github.com/zhengmz/luci-app-zerotier' >>feeds.conf.default
+echo 'src-git zerotier https://github.com/mwarning/zerotier-openwrt.git' >>feeds.conf.default
