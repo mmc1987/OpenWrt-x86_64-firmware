@@ -143,6 +143,16 @@ jobs:
         tag_name: ${{ steps.tag.outputs.release_tag }}
         body_path: release.txt
         files: ${{ env.FIRMWARE }}/*
+        
+    - name: Send Bark Notification
+      if: always()  # 确保该步骤总是运行，不管之前的步骤成功或失败
+      run: |
+        if [[ "${{ steps.compile.outputs.status }}" == "success" ]]; then
+          curl -s "https://api.day.app/J5xsjQ9PMoSgzaUwymg4yj/编译完成/Bark通知"
+        else
+          curl -s "https://api.day.app/J5xsjQ9PMoSgzaUwymg4yj/编译失败/Bark通知"
+        fi
+
 
     - name: Delete workflow runs
       uses: Mattraks/delete-workflow-runs@main
