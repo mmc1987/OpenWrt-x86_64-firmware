@@ -145,13 +145,19 @@ jobs:
         files: ${{ env.FIRMWARE }}/*
 
     - name: Send Bark Notification
-      if: always()  # 确保该步骤总是运行，不管之前的步骤成功或失败
+      if: always()
       run: |
         if [[ "${{ steps.compile.outputs.status }}" == "success" ]]; then
-          curl -s "https://api.day.app/J5xsjQ9PMoSgzaUwymg4yj/编译完成/Bark通知"
+          VERSION=$(cat openwrt/bin/targets/*/*/version.buildinfo | grep '^VERSION=' | cut -d'=' -f2)
+          DATE=$(date +"%Y%m%d%H%M")
+          DOWNLOAD_URL="https://example.com/download/${{ env.FIRMWARE }}"
+          MESSAGE="Build completed - Version: $VERSION, Date: $DATE, Download: $DOWNLOAD_URL"
+          curl -s "https://api.day.app/J5xsjQ9PMoSgzaUwymg4yj/OpenWrt_Build_Complete/$MESSAGE"
         else
-          curl -s "https://api.day.app/J5xsjQ9PMoSgzaUwymg4yj/编译失败/Bark通知"
+          MESSAGE="Build failed"
+          curl -s "https://api.day.app/J5xsjQ9PMoSgzaUwymg4yj/OpenWrt_Build_Failed/$MESSAGE"
         fi
+
 
     - name: Delete workflow runs
       uses: Mattraks/delete-workflow-runs@main
