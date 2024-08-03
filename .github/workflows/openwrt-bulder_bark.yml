@@ -27,6 +27,10 @@ env:
   UPLOAD_FIRMWARE: true
   UPLOAD_RELEASE: true
   TZ: Asia/Shanghai
+  GITHUB_REPOSITORY_URL: https://github.com/${{ github.repository }}
+  GITHUB_REPOSITORY: ${{ github.repository }}
+  GITHUB_ACTOR: ${{ github.actor }}
+  GITHUB_WORKFLOW: ${{ github.workflow }}
 
 jobs:
   build:
@@ -144,6 +148,28 @@ jobs:
         body_path: release.txt
         files: ${{ env.FIRMWARE }}/*
 
+    - name: Refresh Release API
+      if: steps.tag.outputs.status == 'success' && env.UPLOAD_RELEASE == 'true' && !cancelled()
+      run: |
+        mkdir -p Github_Api
+        cd Github_Api
+        TAG="${{ steps.tag.outputs.release_tag }}"
+        TAG_ENCODED=$(echo "$TAG" | sed 's/ /%20/g')
+        curl -H "Authorization: Bearer ${{ secrets.ACTIONS_TRIGGER_PAT }}" "https://api.github.com/repos/${{ github.repository }}/releases/tags/$TAG_ENCODED" -o Github_Tags
+        if [[ $? -ne 0 ]]; then
+            wget -q --no-cookie --no-check-certificate "https://api.github.com/repos/${{ github.repository }}/releases/tags/$TAG_ENCODED" -O Github_Tags
+        fi
+
+    - name: Upload API to Github Release
+      uses: svenstaro/upload-release-action@master
+      if: always()
+      with:
+        repo_token: ${{ secrets.ACTIONS_TRIGGER_PAT }}
+        file: "Github_Api/*"
+        file_glob: true
+        tag: ${{ steps.tag.outputs.release_tag }}
+        overwrite: true
+
     - name: Send Bark Notification
       if: always()
       run: |
@@ -157,7 +183,6 @@ jobs:
           MESSAGE="Build failed"
           curl -s "https://api.day.app/J5xsjQ9PMoSgzaUwymg4yj/OpenWrt_Build_Failed/$MESSAGE"
         fi
-
 
     - name: Delete workflow runs
       uses: Mattraks/delete-workflow-runs@main
@@ -173,3 +198,4 @@ jobs:
         delete_tags: true
       env:
         GITHUB_TOKEN: ${{ secrets.ACTIONS_TRIGGER_PAT }}
+
