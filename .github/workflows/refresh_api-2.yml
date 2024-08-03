@@ -44,7 +44,7 @@ jobs:
         cd Github_Api
         TAG="${{ github.event.inputs.RELEASE_TAG }}"
         TAG_ENCODED=$(echo "$TAG" | sed 's/ /%20/g')
-        curl -H "Authorization: Bearer ${{ secrets.REPO_TOKEN }}" "https://api.github.com/repos/${{ github.repository }}/releases/tags/$TAG_ENCODED" -o ${{ github.event.inputs.GITHUB_API }}
+        curl -H "Authorization: Bearer ${{ secrets.ACTIONS_TRIGGER_PAT }}" "https://api.github.com/repos/${{ github.repository }}/releases/tags/$TAG_ENCODED" -o ${{ github.event.inputs.GITHUB_API }}
         if [[ $? -ne 0 ]]; then
             wget -q --no-cookie --no-check-certificate "https://api.github.com/repos/${{ github.repository }}/releases/tags/$TAG_ENCODED" -O ${{ github.event.inputs.GITHUB_API }}
         fi
