@@ -12,7 +12,7 @@ on:
         default: '2024.08.02-1010'
         type: choice
         options:
-          - 'OpenWrt_Builder'
+          - '2024.08.02-1010'
       GITHUB_API:
         description: '选择Release api文件'
         required: true
