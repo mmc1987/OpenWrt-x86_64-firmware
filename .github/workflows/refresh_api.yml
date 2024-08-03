@@ -53,7 +53,7 @@ jobs:
       uses: svenstaro/upload-release-action@master
       if: steps.download.outcome == 'success'
       with:
-        repo_token: ${{ secrets.REPO_TOKEN }}
+        repo_token: ${{ secrets.ACTIONS_TRIGGER_PAT }}
         file: "Github_Api/*"
         file_glob: true
         tag: ${{ github.event.inputs.RELEASE_TAG }}
