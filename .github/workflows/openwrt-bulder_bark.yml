@@ -185,18 +185,7 @@ jobs:
     #     fi
 
 
-    - name: Send Bark Notification
-      if: always()  # 确保该步骤总是运行，不管之前的步骤成功或失败
-      run: |
-        if [[ "${{ steps.compile.outputs.status }}" == "success" ]]; then
-          DATE=$(date +"%Y%m%d%H%M")
-          MESSAGE="Build completed - Date: $DATE"
-          curl -s "https://api.day.app/J5xsjQ9PMoSgzaUwymg4yj/编译完成/$MESSAGE"
-        else
-          DATE=$(date +"%Y%m%d%H%M")
-          MESSAGE="Build failed - Date: $DATE"
-          curl -s "https://api.day.app/J5xsjQ9PMoSgzaUwymg4yj/编译失败/$MESSAGE"
-        fi
+
 
     - name: Delete workflow runs
       uses: Mattraks/delete-workflow-runs@main
@@ -213,3 +202,30 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.ACTIONS_TRIGGER_PAT }}
 
+    - name: Send Bark Notification
+      if: always()  # 确保该步骤总是运行，不管之前的步骤成功或失败
+      run: |
+        urlencode() {
+          local length="${#1}"
+          for (( i = 0; i < length; i++ )); do
+            local c="${1:i:1}"
+            case $c in
+              [a-zA-Z0-9.~_-]) printf "$c" ;;
+              *) printf '%%%02X' "'$c" ;;
+            esac
+          done
+        }
+    
+        if [[ "success" == "success" ]]; then
+          if [[ "success" == "success" ]]; then
+            DATE=$(date +"%Y%m%d%H%M")
+            MESSAGE="Build completed - Date: $DATE"
+            ENCODED_MESSAGE=$(urlencode "$MESSAGE")
+            curl -s "https://api.day.app/J5xsjQ9PMoSgzaUwymg4yj/编译完成/$ENCODED_MESSAGE"
+          else
+            DATE=$(date +"%Y%m%d%H%M")
+            MESSAGE="Build failed - Date: $DATE"
+            ENCODED_MESSAGE=$(urlencode "$MESSAGE")
+            curl -s "https://api.day.app/J5xsjQ9PMoSgzaUwymg4yj/编译失败/$ENCODED_MESSAGE"
+          fi
+        fi
