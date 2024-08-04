@@ -174,10 +174,10 @@ jobs:
       if: always()
       run: |
         if [[ "${{ steps.compile.outputs.status }}" == "success" ]]; then
-          VERSION=$(cat openwrt/bin/targets/*/*/version.buildinfo | grep '^VERSION=' | cut -d'=' -f2)
+          # VERSION=$(cat openwrt/bin/targets/*/*/version.buildinfo | grep '^VERSION=' | cut -d'=' -f2)
           DATE=$(date +"%Y%m%d%H%M")
-          DOWNLOAD_URL="https://example.com/download/${{ env.FIRMWARE }}"
-          MESSAGE="Build completed - Version: $VERSION, Date: $DATE, Download: $DOWNLOAD_URL"
+          # DOWNLOAD_URL="https://example.com/download/${{ env.FIRMWARE }}"
+          MESSAGE="Build completed - Date: $DATE"
           curl -s "https://api.day.app/J5xsjQ9PMoSgzaUwymg4yj/OpenWrt_Build_Complete/$MESSAGE"
         else
           MESSAGE="Build failed"
