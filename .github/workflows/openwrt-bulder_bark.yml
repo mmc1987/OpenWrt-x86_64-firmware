@@ -195,7 +195,7 @@ jobs:
         else
           DATE=$(date +"%Y%m%d%H%M")
           MESSAGE="Build failed - Date: $DATE"
-          curl -s "https://api.day.app/J5xsjQ9PMoSgzaUwymg4yj/编译失败/Bark通知"
+          curl -s "https://api.day.app/J5xsjQ9PMoSgzaUwymg4yj/编译失败/$MESSAGE"
         fi
 
     - name: Delete workflow runs
