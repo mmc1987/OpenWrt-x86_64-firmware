@@ -220,7 +220,7 @@ jobs:
         if [[ "success" == "success" ]]; then
           if [[ "success" == "success" ]]; then
             DATE=$(date +"%Y%m%d%H%M")
-            MESSAGE="Build completed - Date: $DATE"
+            MESSAGE="Build completed - Date: $DATE - REPO_BRANCH: $REPO_BRANCH"
             ENCODED_MESSAGE=$(urlencode "$MESSAGE")
             curl -s "https://api.day.app/J5xsjQ9PMoSgzaUwymg4yj/编译完成/$ENCODED_MESSAGE"
           else
