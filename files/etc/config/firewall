@@ -143,7 +143,7 @@ config redirect
 	option name 'mac'
 	option src 'wan'
 	option src_dport '5900'
-	option dest_ip '192.168.1.192'
+	option dest_ip '192.168.1.198'
 	option dest_port '5900'
 
 config rule
