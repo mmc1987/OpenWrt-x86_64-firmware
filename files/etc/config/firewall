@@ -134,7 +134,7 @@ config redirect
 	option name 'lxc.ubuntu'
 	option src 'wan'
 	option src_dport '22'
-	option dest_ip '192.168.1.101'
+	option dest_ip '192.168.1.111'
 	option dest_port '22'
 
 config redirect
