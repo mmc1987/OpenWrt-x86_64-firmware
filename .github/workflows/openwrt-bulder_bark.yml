@@ -217,28 +217,57 @@ jobs:
       if: always()  # Ensure this step always runs, regardless of the success or failure of previous steps
       run: |
         urlencode() {
-          local raw_url="$1"
-          local encoded_url
-          encoded_url=$(printf '%s' "$raw_url" | jq -sRr @uri)
-          echo "$encoded_url"
+        local raw_url="$1"
+        local encoded_url
+        # 使用 jq 工具进行正确的 URL 编码
+        encoded_url=$(printf '%s' "$raw_url" | jq -sRr @uri)
+        echo "$encoded_url"
         }
-    
+      
         START_TIME=${{ env.START_TIME }}
         END_TIME=${{ env.END_TIME }}
         ELAPSED_TIME=$((END_TIME - START_TIME))
+        
+        DATE=$(date +"%Y%m%d%H%M")
+        
         if [[ "${{ steps.compile.outputs.status }}" == "success" ]]; then
-          DATE=$(date +"%Y%m%d%H%M")
-          # MESSAGE="构建完成 - 日期: $DATE - 分支: $REPO_BRANCH - 耗时: $ELAPSED_TIME"
           MESSAGE="构建完成\n日期: $DATE\n分支: $REPO_BRANCH\n耗时: $ELAPSED_TIME"
           ENCODED_MESSAGE=$(urlencode "$MESSAGE")
           curl -s "https://api.day.app/J5xsjQ9PMoSgzaUwymg4yj/编译完成/$ENCODED_MESSAGE"
         else
-          DATE=$(date +"%Y%m%d%H%M")
-          # MESSAGE="构建失败 - 日期: $DATE"
           MESSAGE="构建失败\n日期: $DATE"
           ENCODED_MESSAGE=$(urlencode "$MESSAGE")
           curl -s "https://api.day.app/J5xsjQ9PMoSgzaUwymg4yj/编译失败/$ENCODED_MESSAGE"
         fi
+
+
+
+    # - name: Send Bark Notification
+    #   if: always()  # Ensure this step always runs, regardless of the success or failure of previous steps
+    #   run: |
+    #     urlencode() {
+    #       local raw_url="$1"
+    #       local encoded_url
+    #       encoded_url=$(printf '%s' "$raw_url" | jq -sRr @uri)
+    #       echo "$encoded_url"
+    #     }
+    
+    #     START_TIME=${{ env.START_TIME }}
+    #     END_TIME=${{ env.END_TIME }}
+    #     ELAPSED_TIME=$((END_TIME - START_TIME))
+    #     if [[ "${{ steps.compile.outputs.status }}" == "success" ]]; then
+    #       DATE=$(date +"%Y%m%d%H%M")
+    #       # MESSAGE="构建完成 - 日期: $DATE - 分支: $REPO_BRANCH - 耗时: $ELAPSED_TIME"
+    #       MESSAGE="构建完成\n日期: $DATE\n分支: $REPO_BRANCH\n耗时: $ELAPSED_TIME"
+    #       ENCODED_MESSAGE=$(urlencode "$MESSAGE")
+    #       curl -s "https://api.day.app/J5xsjQ9PMoSgzaUwymg4yj/编译完成/$ENCODED_MESSAGE"
+    #     else
+    #       DATE=$(date +"%Y%m%d%H%M")
+    #       # MESSAGE="构建失败 - 日期: $DATE"
+    #       MESSAGE="构建失败\n日期: $DATE"
+    #       ENCODED_MESSAGE=$(urlencode "$MESSAGE")
+    #       curl -s "https://api.day.app/J5xsjQ9PMoSgzaUwymg4yj/编译失败/$ENCODED_MESSAGE"
+    #     fi
 
       
 
