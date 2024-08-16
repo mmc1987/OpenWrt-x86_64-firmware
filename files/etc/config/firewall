@@ -153,3 +153,25 @@ config rule
 	option dest_port '51820'
 	option target 'ACCEPT'
 
+config include 'zerotier'
+	option type 'script'
+	option path '/usr/share/zerotier/firewall.include'
+	option reload '1'
+
+config redirect
+	option dest 'lan'
+	option target 'DNAT'
+	option name 'rustdesk'
+	option src 'wan'
+	option src_dport '21116'
+	option dest_ip '192.168.1.120'
+	option dest_port '21116'
+
+config redirect
+	option dest 'lan'
+	option target 'DNAT'
+	option name 'rustdeskserver'
+	option src 'wan'
+	option src_dport '21117'
+	option dest_ip '192.168.1.120'
+	option dest_port '21117'
