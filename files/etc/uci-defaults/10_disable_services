@@ -1,0 +1,3 @@
+/etc/init.d/shellcrash disable
+
+exit 0
