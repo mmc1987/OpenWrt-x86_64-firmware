@@ -231,12 +231,12 @@ jobs:
         DATE=$(date +"%Y%m%d%H%M")
         
         if [[ "${{ steps.compile.outputs.status }}" == "success" ]]; then
-          MESSAGE="构建完成\n日期: $DATE\n分支: $REPO_BRANCH\n耗时: $ELAPSED_TIME"
-          ENCODED_MESSAGE=$(urlencode "$MESSAGE")
+          MESSAGE="构建完成%0a日期:$DATE%0a分支:$REPO_BRANCH%0a耗时:$ELAPSED_TIME"
+          
           curl -s "https://api.day.app/J5xsjQ9PMoSgzaUwymg4yj/编译完成/$ENCODED_MESSAGE"
         else
-          MESSAGE="构建失败\n日期: $DATE"
-          ENCODED_MESSAGE=$(urlencode "$MESSAGE")
+          MESSAGE="构建失败%0a日期:$DATE"
+          
           curl -s "https://api.day.app/J5xsjQ9PMoSgzaUwymg4yj/编译失败/$ENCODED_MESSAGE"
         fi
 
