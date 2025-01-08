@@ -3,7 +3,7 @@
 # Based on P3TERX's work: https://github.com/P3TERX/Actions-OpenWrt
 #
 
-name: OpenWrt Builder Enhanced
+name: OpenWrt Builder Enhanced1
 
 on:
   repository_dispatch:
