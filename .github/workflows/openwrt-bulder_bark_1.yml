@@ -53,15 +53,52 @@ jobs:
         sudo rm -rf /etc/apt/sources.list.d/* /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
         sudo docker image prune --all --force
         
-        # 更新软件源
+        # 配置软件源
+        sudo tee /etc/apt/sources.list > /dev/null <<EOL
+        deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ jammy main restricted universe multiverse
+        deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ jammy-updates main restricted universe multiverse
+        deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ jammy-backports main restricted universe multiverse
+        deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ jammy-security main restricted universe multiverse
+        EOL
+        
+        # 更新系统
         sudo -E apt-get -qq update
+        sudo -E apt-get -qq install -y apt-utils dialog
         sudo -E apt-get -qq full-upgrade
         
         # 安装基本编译依赖
-        sudo -E apt-get -qq install -y ack autoconf automake autopoint binutils bison \
-        build-essential bzip2 ccache cmake cpio curl device-tree-compiler \
-        flex g++ gawk gcc-multilib g++-multilib gettext git gperf libelf-dev \
-        libncurses5-dev libssl-dev python3-distutils zlib1g-dev unzip
+        sudo -E apt-get -qq install -y \
+        automake autoconf \
+        build-essential \
+        bzip2 \
+        curl \
+        flex \
+        g++ \
+        gawk \
+        gcc \
+        git \
+        libncurses-dev \
+        libssl-dev \
+        make \
+        python3 \
+        python3-setuptools \
+        unzip \
+        wget \
+        zlib1g-dev
+        
+        # 安装额外依赖
+        sudo -E apt-get -qq install -y \
+        ccache \
+        cmake \
+        device-tree-compiler \
+        gcc-multilib \
+        g++-multilib \
+        gettext \
+        gperf \
+        libelf-dev \
+        libtool \
+        pkg-config \
+        python3-distutils
         
         sudo -E apt-get -qq autoremove --purge
         sudo -E apt-get -qq clean
