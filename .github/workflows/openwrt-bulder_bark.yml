@@ -50,27 +50,38 @@ jobs:
       env:
         DEBIAN_FRONTEND: noninteractive
       run: |
-        # 首先更新软件源并添加必要的仓库
+        # 清理和准备环境
         sudo rm -rf /etc/apt/sources.list.d/* /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
         sudo docker image prune --all --force
         
         # 更新软件源
         sudo apt-get update
         
-        # 安装基础构建工具
-        sudo apt-get -y install build-essential
+        # 安装核心必需包
+        sudo apt-get -y install \
+          build-essential \
+          gawk \
+          gcc-multilib \
+          git \
+          libncurses5-dev \
+          libssl-dev \
+          python3 \
+          python3-distutils \
+          unzip \
+          wget \
+          zlib1g-dev
         
-        # 分批安装依赖，避免单次安装过多包导致的错误
-        sudo apt-get -y install ack antlr3 asciidoc autoconf automake autopoint binutils bison
-        sudo apt-get -y install bzip2 ccache cmake cpio curl device-tree-compiler fastjar flex gawk
-        sudo apt-get -y install gettext gcc-multilib g++-multilib git gperf haveged help2man
-        sudo apt-get -y install intltool libc6-dev-i386 libelf-dev libfuse-dev libglib2.0-dev
-        sudo apt-get -y install libgmp3-dev libltdl-dev libmpc-dev libmpfr-dev libncurses5-dev
-        sudo apt-get -y install libncursesw5-dev libpython3-dev libreadline-dev libssl-dev
-        sudo apt-get -y install libtool lrzsz mkisofs msmtp ninja-build p7zip p7zip-full patch
-        sudo apt-get -y install pkgconf python2.7 python3 python3-pyelftools python3-setuptools
-        sudo apt-get -y install qemu-utils rsync scons squashfs-tools subversion swig texinfo
-        sudo apt-get -y install uglifyjs upx-ucl unzip vim wget xmlto xxd zlib1g-dev
+        # 安装其他可选包（如果失败则继续）
+        sudo apt-get -y install \
+          ccache \
+          cmake \
+          curl \
+          file \
+          g++-multilib \
+          libelf-dev \
+          patch \
+          rsync \
+          || true
         
         # 清理
         sudo apt-get -y autoremove --purge
