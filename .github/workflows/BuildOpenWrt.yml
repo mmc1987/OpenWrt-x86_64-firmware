@@ -1,25 +1,25 @@
-# 编译 OpenWrt 固件
-
-name: Build OpenWrt
+name: 编译 OpenWrt
 
 on:
-  repository_dispatch:
   workflow_dispatch:
     inputs:
-      ssh:
-        description: 'SSH connection to Actions'
-        required: false
-        default: 'false'
+      target:
+        description: '选择目标设备'
+        required: true
+        default: 'x86_64'
+        type: choice
+        options:
+          - x86_64
+          - rockchip
+          - ramips
   schedule:
-    - cron: '0 20 * * *'  # 每天 UTC 20:00 运行（北京时间次日凌晨 4:00）
+    - cron: '0 0 * * 5'  # 每周五UTC时间0点运行
 
 env:
   REPO_URL: https://github.com/openwrt/openwrt
   REPO_BRANCH: main
-  CONFIG_FILE: '.config'
-  DIY_SH: 'diy.sh'
-  UPLOAD_FIRMWARE: true
-  UPLOAD_RELEASE: true
+  CONFIG_FILE: .config
+  DIY_SH: diy.sh
   TZ: Asia/Shanghai
 
 jobs:
@@ -27,140 +27,87 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@main
+    - name: 检查项目分支
+      uses: actions/checkout@v4
 
-    - name: Initialize Environment
+    - name: 初始化编译环境
       env:
         DEBIAN_FRONTEND: noninteractive
       run: |
         sudo rm -rf /etc/apt/sources.list.d/* /usr/share/dotnet /usr/local/lib/android /opt/ghc
-        
-        # 更新系统
-        sudo apt-get update
-        sudo apt-get -y upgrade
-        
-        # 安装基础依赖
-        sudo apt-get -y install \
-          build-essential \
-          libncurses5-dev \
-          libncursesw5-dev \
-          zlib1g-dev \
-          gawk \
-          git \
-          gettext \
-          libssl-dev \
-          xsltproc \
-          wget \
-          unzip \
-          python3
-        
-        # 安装编译工具
-        sudo apt-get -y install \
-          gcc \
-          g++ \
-          make \
-          cmake \
-          ccache \
-          curl \
-          bzip2 \
-          perl \
-          rsync
-        
-        # 安装额外依赖
-        sudo apt-get -y install \
-          libelf-dev \
-          subversion \
-          flex \
-          bison \
-          file
-        
-        sudo apt-get -y autoremove
-        sudo apt-get clean
-        
-        # 设置时区和工作目录
+        sudo -E apt-get -qq update
+        sudo -E apt-get -qq install $(curl -fsSL https://raw.githubusercontent.com/openwrt/openwrt/main/.github/workflows/build-openwrt.yml | grep -oP '(?<=packages: )[^,]+')
+        sudo -E apt-get -qq autoremove --purge
+        sudo -E apt-get -qq clean
         sudo timedatectl set-timezone "$TZ"
-        sudo mkdir -p /workdir
-        sudo chown $USER:$GROUPS /workdir
 
-    - name: Clone Source Code
+    - name: 克隆源代码
       run: |
-        df -hT $PWD
         git clone $REPO_URL -b $REPO_BRANCH openwrt
-        ln -sf /workdir/openwrt $GITHUB_WORKSPACE/openwrt
         cd openwrt
-        useVersionInfo=$(git show -s --date=short --format="Author: %an<br/>date: %cd<br/>commit: %s<br/>commit hash: %H")
-        echo "useVersionInfo=$useVersionInfo" >> $GITHUB_ENV
-        echo "DATE=$(date +"%Y-%m-%d %H:%M:%S")" >> $GITHUB_ENV
-
-    - name: Load Custom Configuration
+        
+    - name: 更新 feeds
       run: |
-        [ -e files ] && mv files openwrt/files
-        [ -e $CONFIG_FILE ] && mv $CONFIG_FILE openwrt/.config
-        chmod +x $DIY_SH
         cd openwrt
-        $GITHUB_WORKSPACE/$DIY_SH
+        ./scripts/feeds update -a
+        ./scripts/feeds install -a
+
+    - name: 生成配置文件
+      run: |
+        cd openwrt
+        cat > .config <<EOF
+        CONFIG_TARGET_${{ github.event.inputs.target }}=y
+        CONFIG_TARGET_${{ github.event.inputs.target }}_Generic=y
+        CONFIG_TARGET_${{ github.event.inputs.target }}_Generic_DEVICE_generic=y
+        CONFIG_PACKAGE_luci=y
+        CONFIG_PACKAGE_luci-app-firewall=y
+        CONFIG_PACKAGE_luci-app-opkg=y
+        CONFIG_PACKAGE_luci-base=y
+        CONFIG_PACKAGE_luci-lib-ip=y
+        CONFIG_PACKAGE_luci-lib-jsonc=y
+        CONFIG_PACKAGE_luci-lib-nixio=y
+        CONFIG_PACKAGE_luci-theme-bootstrap=y
+        EOF
         make defconfig
 
-    - name: Download Package
-      id: package
+    - name: 下载软件包
       run: |
         cd openwrt
         make download -j8
         find dl -size -1024c -exec ls -l {} \;
         find dl -size -1024c -exec rm -f {} \;
 
-    - name: Compile Firmware
-      id: compile
+    - name: 编译固件
       run: |
         cd openwrt
         echo -e "$(nproc) thread compile"
         make -j$(nproc) || make -j1 V=s
-        echo "status=success" >> $GITHUB_OUTPUT
-        grep '^CONFIG_TARGET.*DEVICE.*=y' .config | sed -r 's/.*DEVICE_(.*)=y/\1/' > DEVICE_NAME
-        [ -s DEVICE_NAME ] && echo "DEVICE_NAME=_$(cat DEVICE_NAME)" >> $GITHUB_ENV
-        echo "FILE_DATE=_$(date +"%Y%m%d%H%M")" >> $GITHUB_ENV
 
-    - name: Check Space Usage
-      if: (!cancelled())
-      run: df -hT
-
-    - name: Upload Firmware Directory
-      uses: actions/upload-artifact@main
-      if: steps.compile.outputs.status == 'success' && env.UPLOAD_FIRMWARE == 'true' && !cancelled()
-      with:
-        name: OpenWrt_firmware${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}
-        path: openwrt/bin/targets/
-
-    - name: Generate Release Tag
-      id: tag
-      if: env.UPLOAD_RELEASE == 'true' && !cancelled()
+    - name: 整理文件
       run: |
-        echo "release_tag=$(date +"%Y.%m.%d-%H%M")" >> $GITHUB_OUTPUT
-        touch release.txt
-        echo "status=success" >> $GITHUB_OUTPUT
+        cd openwrt/bin/targets/
+        find . -name "*.bin" -o -name "*.img.gz" | xargs -I {} tar -czf OpenWrt-${{ github.event.inputs.target }}.tar.gz {}
 
-    - name: Upload Firmware to Release
+    - name: 创建发布
       uses: softprops/action-gh-release@v1
-      if: steps.tag.outputs.status == 'success' && !cancelled()
+      with:
+        tag_name: OpenWrt-${{ github.event.inputs.target }}-${{ github.run_number }}
+        files: openwrt/bin/targets/**/OpenWrt-${{ github.event.inputs.target }}.tar.gz
+        body: |
+          OpenWrt 自动编译版本
+          设备: ${{ github.event.inputs.target }}
+          编译时间: ${{ env.TZ }}
+          
+          默认包含以下功能:
+          - 基础系统
+          - LuCI Web界面
+          - 防火墙
+          - OPKG包管理
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ steps.tag.outputs.release_tag }}
-        body_path: release.txt
-        files: openwrt/bin/targets/*/*/*
 
-    - name: Delete Old Releases
-      uses: dev-drprasad/delete-older-releases@v0.2.1
-      if: env.UPLOAD_RELEASE == 'true' && !cancelled()
-      with:
-        keep_latest: 3
-        delete_tags: true
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Delete Old Workflows
-      uses: Mattraks/delete-workflow-runs@main
+    - name: 删除旧的工作流
+      uses: Mattraks/delete-workflow-runs@v2
       with:
         retain_days: 1
-        keep_minimum_runs: 3
+        keep_minimum_runs: 3 
