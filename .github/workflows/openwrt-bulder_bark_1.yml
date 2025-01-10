@@ -10,7 +10,7 @@
 # See /LICENSE for more information.
 #
 
-name: OpenWrt Builder Bark1
+name: OpenWrt Builder Bark
 
 on:
   repository_dispatch:
@@ -102,7 +102,21 @@ jobs:
       run: |
         cd openwrt
         echo -e "$(nproc) thread compile"
-        make -j$(nproc) || make -j1 || make -j1 V=s
+        make defconfig
+        make download -j8
+        echo "Debug: Starting compilation..."
+        make -j$(nproc) V=s || make -j1 V=s
+        echo "Debug: Compilation finished"
+        echo "Debug: Checking build output..."
+        if [ -d bin/targets ]; then
+          echo "Build output exists:"
+          ls -la bin/targets
+        else
+          echo "Error: Build output directory not found"
+          echo "Current directory structure:"
+          ls -la
+          exit 1
+        fi
         echo "status=success" >> $GITHUB_OUTPUT
         grep '^CONFIG_TARGET.*DEVICE.*=y' .config | sed -r 's/.*DEVICE_(.*)=y/\1/' > DEVICE_NAME
         [ -s DEVICE_NAME ] && echo "DEVICE_NAME=_$(cat DEVICE_NAME)" >> $GITHUB_ENV
@@ -123,10 +137,35 @@ jobs:
       id: organize
       if: env.UPLOAD_FIRMWARE == 'true' && !cancelled()
       run: |
-        cd openwrt/bin/targets/*/*
-        rm -rf packages
-        echo "FIRMWARE=$PWD" >> $GITHUB_ENV
-        echo "status=success" >> $GITHUB_OUTPUT
+        echo "Debug: Checking directory structure..."
+        ls -la openwrt/bin || echo "bin directory does not exist"
+        if [ -d openwrt/bin/targets ]; then
+          echo "Debug: targets directory exists"
+          ls -la openwrt/bin/targets
+          cd openwrt/bin/targets
+          for d in *; do
+            if [ -d "$d" ]; then
+              echo "Debug: Found architecture directory: $d"
+              ls -la "$d"
+            fi
+          done
+          TARGET_DIR=$(ls -d openwrt/bin/targets/*/* 2>/dev/null | head -n 1)
+          if [ -n "$TARGET_DIR" ]; then
+            cd "$TARGET_DIR"
+            rm -rf packages
+            echo "FIRMWARE=$PWD" >> $GITHUB_ENV
+            echo "status=success" >> $GITHUB_OUTPUT
+          else
+            echo "Error: No target directory found"
+            exit 1
+          fi
+        else
+          echo "Error: Directory openwrt/bin/targets does not exist"
+          echo "Debug: Current directory structure:"
+          pwd
+          ls -la
+          exit 1
+        fi
 
     - name: Package firmware
       id: package-firmware
