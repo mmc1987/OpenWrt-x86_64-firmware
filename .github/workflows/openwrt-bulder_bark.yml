@@ -50,12 +50,33 @@ jobs:
       env:
         DEBIAN_FRONTEND: noninteractive
       run: |
+        # 首先更新软件源并添加必要的仓库
         sudo rm -rf /etc/apt/sources.list.d/* /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
         sudo docker image prune --all --force
-        sudo -E apt-get -qq update
-        sudo -E apt-get -qq install ack antlr3 asciidoc autoconf automake autopoint binutils bison build-essential bzip2 ccache cmake cpio curl device-tree-compiler fastjar flex gawk gettext gcc-multilib g++-multilib git gperf haveged help2man intltool libc6-dev-i386 libelf-dev libfuse-dev libglib2.0-dev libgmp3-dev libltdl-dev libmpc-dev libmpfr-dev libncurses5-dev libncursesw5-dev libpython3-dev libreadline-dev libssl-dev libtool lrzsz mkisofs msmtp ninja-build p7zip p7zip-full patch pkgconf python2.7 python3 python3-pyelftools python3-setuptools qemu-utils rsync scons squashfs-tools subversion swig texinfo uglifyjs upx-ucl unzip vim wget xmlto xxd zlib1g-dev
-        sudo -E apt-get -qq autoremove --purge
-        sudo -E apt-get -qq clean
+        
+        # 更新软件源
+        sudo apt-get update
+        
+        # 安装基础构建工具
+        sudo apt-get -y install build-essential
+        
+        # 分批安装依赖，避免单次安装过多包导致的错误
+        sudo apt-get -y install ack antlr3 asciidoc autoconf automake autopoint binutils bison
+        sudo apt-get -y install bzip2 ccache cmake cpio curl device-tree-compiler fastjar flex gawk
+        sudo apt-get -y install gettext gcc-multilib g++-multilib git gperf haveged help2man
+        sudo apt-get -y install intltool libc6-dev-i386 libelf-dev libfuse-dev libglib2.0-dev
+        sudo apt-get -y install libgmp3-dev libltdl-dev libmpc-dev libmpfr-dev libncurses5-dev
+        sudo apt-get -y install libncursesw5-dev libpython3-dev libreadline-dev libssl-dev
+        sudo apt-get -y install libtool lrzsz mkisofs msmtp ninja-build p7zip p7zip-full patch
+        sudo apt-get -y install pkgconf python2.7 python3 python3-pyelftools python3-setuptools
+        sudo apt-get -y install qemu-utils rsync scons squashfs-tools subversion swig texinfo
+        sudo apt-get -y install uglifyjs upx-ucl unzip vim wget xmlto xxd zlib1g-dev
+        
+        # 清理
+        sudo apt-get -y autoremove --purge
+        sudo apt-get clean
+        
+        # 设置时区
         sudo timedatectl set-timezone "$TZ"
         sudo mkdir -p /workdir
         sudo chown $USER:$GROUPS /workdir
@@ -176,22 +197,6 @@ jobs:
         tag: ${{ steps.tag.outputs.release_tag }}
         overwrite: true
 
-    # - name: Send Bark Notification
-    #   if: always()
-    #   run: |
-    #     if [[ "${{ steps.compile.outputs.status }}" == "success" ]]; then
-    #       # VERSION=$(cat openwrt/bin/targets/*/*/version.buildinfo | grep '^VERSION=' | cut -d'=' -f2)
-    #       DATE=$(date +"%Y%m%d%H%M")
-    #       # DOWNLOAD_URL="https://example.com/download/${{ env.FIRMWARE }}"
-    #       MESSAGE="Build completed - Date: $DATE"
-    #       curl -s "https://api.day.app/J5xsjQ9PMoSgzaUwymg4yj/OpenWrt_Build_Complete/$MESSAGE"
-    #     else
-    #       MESSAGE="Build failed"
-    #       curl -s "https://api.day.app/J5xsjQ9PMoSgzaUwymg4yj/OpenWrt_Build_Failed/$MESSAGE"
-    #     fi
-
-
-
 
     - name: Delete workflow runs
       uses: Mattraks/delete-workflow-runs@main
@@ -232,102 +237,9 @@ jobs:
         
         if [[ "${{ steps.compile.outputs.status }}" == "success" ]]; then
           MESSAGE="构建完成%0a日期:$DATE%0a分支:$REPO_BRANCH%0a耗时:$ELAPSED_TIME"
-          
-          curl -s "https://api.day.app/J5xsjQ9PMoSgzaUwymg4yj/编译完成/$ENCODED_MESSAGE"
+          curl -s "https://api.day.app/J5xsjQ9PMoSgzaUwymg4yj/编译完成/$MESSAGE"
         else
           MESSAGE="构建失败%0a日期:$DATE"
-          
-          curl -s "https://api.day.app/J5xsjQ9PMoSgzaUwymg4yj/编译失败/$ENCODED_MESSAGE"
+          curl -s "https://api.day.app/J5xsjQ9PMoSgzaUwymg4yj/编译失败/$MESSAGE"
         fi
 
-
-
-    # - name: Send Bark Notification
-    #   if: always()  # Ensure this step always runs, regardless of the success or failure of previous steps
-    #   run: |
-    #     urlencode() {
-    #       local raw_url="$1"
-    #       local encoded_url
-    #       encoded_url=$(printf '%s' "$raw_url" | jq -sRr @uri)
-    #       echo "$encoded_url"
-    #     }
-    
-    #     START_TIME=${{ env.START_TIME }}
-    #     END_TIME=${{ env.END_TIME }}
-    #     ELAPSED_TIME=$((END_TIME - START_TIME))
-    #     if [[ "${{ steps.compile.outputs.status }}" == "success" ]]; then
-    #       DATE=$(date +"%Y%m%d%H%M")
-    #       # MESSAGE="构建完成 - 日期: $DATE - 分支: $REPO_BRANCH - 耗时: $ELAPSED_TIME"
-    #       MESSAGE="构建完成\n日期: $DATE\n分支: $REPO_BRANCH\n耗时: $ELAPSED_TIME"
-    #       ENCODED_MESSAGE=$(urlencode "$MESSAGE")
-    #       curl -s "https://api.day.app/J5xsjQ9PMoSgzaUwymg4yj/编译完成/$ENCODED_MESSAGE"
-    #     else
-    #       DATE=$(date +"%Y%m%d%H%M")
-    #       # MESSAGE="构建失败 - 日期: $DATE"
-    #       MESSAGE="构建失败\n日期: $DATE"
-    #       ENCODED_MESSAGE=$(urlencode "$MESSAGE")
-    #       curl -s "https://api.day.app/J5xsjQ9PMoSgzaUwymg4yj/编译失败/$ENCODED_MESSAGE"
-    #     fi
-
-      
-
-    # - name: Send Bark Notification
-    #   if: always()  # 确保该步骤总是运行，不管之前的步骤成功或失败
-    #   run: |
-    #     urlencode() {
-    #       local length="${#1}"
-    #       for (( i = 0; i < length; i++ )); do
-    #         local c="${1:i:1}"
-    #         case $c in
-    #           [a-zA-Z0-9.~_-]) printf "$c" ;;
-    #           *) printf '%%%02X' "'$c" ;;
-    #         esac
-    #       done
-    #     }
-    
-    #     START_TIME=${{ env.START_TIME }}
-    #     END_TIME=${{ env.END_TIME }}
-    #     ELAPSED_TIME=$((END_TIME - START_TIME))
-    #     if [[ "${{ steps.compile.outputs.status }}" == "success" ]]; then
-    #       DATE=$(date +"%Y%m%d%H%M")
-    #       MESSAGE="构建完成 - 日期: $DATE - 分支: $REPO_BRANCH - 耗时: $ELAPSED_TIME"
-    #       ENCODED_MESSAGE=$(urlencode "$MESSAGE")
-    #       curl -s "https://api.day.app/J5xsjQ9PMoSgzaUwymg4yj/编译完成/$ENCODED_MESSAGE"
-    #     else
-    #       DATE=$(date +"%Y%m%d%H%M")
-    #       MESSAGE="构建失败 - 日期: $DATE"
-    #       ENCODED_MESSAGE=$(urlencode "$MESSAGE")
-    #       curl -s "https://api.day.app/J5xsjQ9PMoSgzaUwymg4yj/编译失败/$ENCODED_MESSAGE"
-    #     fi
-
-
-    # - name: Send Bark Notification
-    #   if: always()  # 确保该步骤总是运行，不管之前的步骤成功或失败
-    #   run: |
-    #     urlencode() {
-    #       local length="${#1}"
-    #       for (( i = 0; i < length; i++ )); do
-    #         local c="${1:i:1}"
-    #         case $c in
-    #           [a-zA-Z0-9.~_-]) printf "$c" ;;
-    #           *) printf '%%%02X' "'$c" ;;
-    #         esac
-    #       done
-    #     }
-
-    #     START_TIME=${{ env.START_TIME }}
-    #     END_TIME=${{ env.END_TIME }}
-    #     ELAPSED_TIME=$((END_TIME - START_TIME))
-    #     if [[ "success" == "success" ]]; then
-    #       if [[ "success" == "success" ]]; then
-    #         DATE=$(date +"%Y%m%d%H%M")
-    #         MESSAGE="Build completed - Date: $DATE - REPO_BRANCH: $REPO_BRANCH - ELAPSED_TIME: $ELAPSED_TIME"
-    #         ENCODED_MESSAGE=$(urlencode "$MESSAGE")
-    #         curl -s "https://api.day.app/J5xsjQ9PMoSgzaUwymg4yj/编译完成/$ENCODED_MESSAGE"
-    #       else
-    #         DATE=$(date +"%Y%m%d%H%M")
-    #         MESSAGE="Build failed - Date: $DATE"
-    #         ENCODED_MESSAGE=$(urlencode "$MESSAGE")
-    #         curl -s "https://api.day.app/J5xsjQ9PMoSgzaUwymg4yj/编译失败/$ENCODED_MESSAGE"
-    #       fi
-    #     fi
