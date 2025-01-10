@@ -81,8 +81,14 @@ jobs:
       working-directory: /workdir
       run: |
         df -hT $PWD
+        echo "Debug: Cloning OpenWrt repository..."
         git clone $REPO_URL -b $REPO_BRANCH openwrt
         ln -sf /workdir/openwrt $GITHUB_WORKSPACE/openwrt
+        cd openwrt
+        echo "Debug: Current directory structure after clone:"
+        ls -la
+        echo "Debug: OpenWrt version:"
+        ./scripts/getver.sh || echo "Version script not found"
 
     - name: Load custom feeds
       run: |
@@ -90,12 +96,22 @@ jobs:
         chmod +x $DIY_P1_SH
         cd openwrt
         $GITHUB_WORKSPACE/$DIY_P1_SH
+        echo "Debug: Content of feeds.conf.default:"
+        cat feeds.conf.default
 
     - name: Update feeds
-      run: cd openwrt && ./scripts/feeds update -a
+      run: |
+        cd openwrt
+        echo "Debug: Updating feeds..."
+        ./scripts/feeds update -a
+        echo "Debug: Feeds update completed"
 
     - name: Install feeds
-      run: cd openwrt && ./scripts/feeds install -a
+      run: |
+        cd openwrt
+        echo "Debug: Installing feeds..."
+        ./scripts/feeds install -a
+        echo "Debug: Feeds installation completed"
 
     - name: Load custom configuration
       run: |
@@ -104,13 +120,17 @@ jobs:
         chmod +x $DIY_P2_SH
         cd openwrt
         $GITHUB_WORKSPACE/$DIY_P2_SH
+        echo "Debug: Content of .config file:"
+        cat .config
 
     - name: Download package
       id: package
       run: |
         cd openwrt
         make defconfig
-        make download -j8
+        echo "Debug: Downloading packages..."
+        make download -j8 V=s
+        echo "Debug: Package download completed"
         find dl -size -1024c -exec ls -l {} \;
         find dl -size -1024c -exec rm -f {} \;
 
@@ -118,20 +138,21 @@ jobs:
       id: compile
       run: |
         cd openwrt
-        echo -e "$(nproc) thread compile"
+        echo "Debug: Starting compilation with $(nproc) threads"
+        echo "Debug: Current directory: $PWD"
+        echo "Debug: Directory contents:"
+        ls -la
         make defconfig
         make download -j8
-        echo "Debug: Starting compilation..."
+        echo "Debug: Starting main compilation..."
         make -j$(nproc) V=s || make -j1 V=s
         echo "Debug: Compilation finished"
-        echo "Debug: Checking build output..."
+        echo "Debug: Build output directory contents:"
+        ls -la bin/ || echo "bin directory not found"
         if [ -d bin/targets ]; then
-          echo "Build output exists:"
-          ls -la bin/targets
+          ls -la bin/targets/
         else
-          echo "Error: Build output directory not found"
-          echo "Current directory structure:"
-          ls -la
+          echo "Error: targets directory not found"
           exit 1
         fi
         echo "status=success" >> $GITHUB_OUTPUT
