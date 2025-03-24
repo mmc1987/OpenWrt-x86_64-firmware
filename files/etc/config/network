@@ -64,3 +64,14 @@ config wireguard_WireGuard
 	list allowed_ips '192.168.9.5/32'
 	option route_allowed_ips '1'
 	option persistent_keepalive '25'
+
+config wireguard_WireGuard
+	option description 'wawo'
+	option public_key 'u4nZbaMF/0zoj25hczZZKWJsuHE/ltfIUzAWMRqm7gA='
+	option private_key 'sNlTB7+YR9GSOfBdDh/jzig+k0fxJEJRXpvWQGPWU3w='
+	option preshared_key '9Sk7OBcLIZWXgZNQw6f2G7RJRjKV9b2q1pfVj0e77kE='
+	list allowed_ips '192.168.9.0/24'
+	option endpoint_host '85631065.dynv6.net'
+	option endpoint_port '51820'
+	option persistent_keepalive '25'
+
