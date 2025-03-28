@@ -230,7 +230,3 @@ config include 'zerotier'
 	option path '/usr/share/zerotier/firewall.include'
 	option reload '1'
 
-config forwarding
-	option src 'wireguard'
-	option dest 'lan'
-
