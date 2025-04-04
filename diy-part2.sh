@@ -19,3 +19,6 @@
 # Modify hostname
 # sed -i 's/OpenWrt/P3TERX-OpenWrt/g' package/base-files/files/bin/config_generate
 sed -i "s/set system\.\@system\[-1\]\.timezone='UTC'/set system\.\@system\[-1\]\.timezone='Asia\/Shanghai'/" package/base-files/files/bin/config_generate
+
+git clone https://github.com/mmc1987/Openwrt_etc.git
+cp Openwrt_etc/backup-OpenWrt/ files/
