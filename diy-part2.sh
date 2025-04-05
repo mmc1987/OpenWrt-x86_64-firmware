@@ -45,6 +45,19 @@ log "开始执行 diy-part2.sh 脚本"
 log "修改系统时区为 Asia/Shanghai"
 sed -i "s/set system\.\@system\[-1\]\.timezone='UTC'/set system\.\@system\[-1\]\.timezone='Asia\/Shanghai'/" package/base-files/files/bin/config_generate || error_exit "修改时区失败"
 
+# 克隆luci-app-zerotier
+log "开始克隆 luci-app-zerotier"
+git clone --depth=1 https://github.com/mmc1987/luci-app-zerotier.git feeds/luci/applications/luci-app-zerotier || error_exit "克隆 luci-app-zerotier 失败"
+log "luci-app-zerotier 克隆完成"
+
+# 更新和安装feeds
+log "开始更新luci feeds"
+./scripts/feeds update -f luci || error_exit "更新luci feeds失败"
+log "开始安装luci-app-zerotier"
+./scripts/feeds install -p luci -f luci-app-zerotier || error_exit "安装luci-app-zerotier失败"
+log "生成默认配置"
+make defconfig || error_exit "生成默认配置失败"
+
 # 克隆私有仓库
 log "开始克隆私有仓库"
 if [ -d "Openwrt_etc" ]; then
