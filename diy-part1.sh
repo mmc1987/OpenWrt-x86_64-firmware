@@ -17,14 +17,8 @@
 # Add a feed source
 # echo 'src-git helloworld https://github.com/fw876/helloworld' >>feeds.conf.default
 # echo 'src-git passwall https://github.com/xiaorouji/openwrt-passwall' >>feeds.conf.default
-# echo 'src-git zerotier https://github.com/mwarning/zerotier-openwrt.git' >>feeds.conf.default
-# git clone --depth=1 https://github.com/mmc1987/luci-app-zerotier.git package/luci-app-zerotier
-# git clone --depth=1 https://github.com/mmc1987/luci-app-zerotier.git feeds/luci/applications/luci-app-zerotier
+echo 'src-git zerotier https://github.com/mwarning/zerotier-openwrt.git' >>feeds.conf.default
 
 # git clone https://github.com/asvow/luci-app-tailscale feeds/luci/applications/luci-app-tailscale
 
-# Remove the incorrect feed
-# echo 'src-git zerotier https://github.com/mmc1987/luci-app-zerotier.git' >>feeds.conf.default
 
-./scripts/feeds update -f luci
-./scripts/feeds install -p luci -f luci-app-zerotier
