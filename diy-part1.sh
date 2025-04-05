@@ -25,3 +25,6 @@ git clone --depth=1 https://github.com/mmc1987/luci-app-zerotier.git feeds/luci/
 
 # Remove the incorrect feed
 # echo 'src-git zerotier https://github.com/mmc1987/luci-app-zerotier.git' >>feeds.conf.default
+
+./scripts/feeds update -f luci
+./scripts/feeds install -p luci -f luci-app-zerotier
