@@ -21,4 +21,8 @@
 
 # git clone https://github.com/asvow/luci-app-tailscale feeds/luci/applications/luci-app-tailscale
 
+# 克隆luci-app-zerotier
+git clone --depth=1 https://github.com/mmc1987/luci-app-zerotier.git feeds/luci/applications/luci-app-zerotier
 
+# 克隆luci-app-easytier
+git clone --depth=1 https://github.com/EasyTier/luci-app-easytier.git feeds/luci/applications/luci-app-easytier
