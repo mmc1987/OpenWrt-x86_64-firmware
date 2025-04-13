@@ -21,6 +21,9 @@
 
 # git clone https://github.com/asvow/luci-app-tailscale feeds/luci/applications/luci-app-tailscale
 
+
+./scripts/feeds update -a
+
 # 克隆luci-app-zerotier
 git clone --depth=1 https://github.com/mmc1987/luci-app-zerotier.git feeds/luci/applications/luci-app-zerotier
 
