@@ -24,7 +24,7 @@ sed -i "s/set system\.\@system\[-1\]\.timezone='UTC'/set system\.\@system\[-1\]\
 ./scripts/feeds install -a
 # ./scripts/feeds install -a
 
-make defconfig
+# make defconfig
 
 # 克隆私有仓库
 if [ -d "Openwrt_etc" ]; then
