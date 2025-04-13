@@ -13,11 +13,7 @@
 # 修改时区
 sed -i "s/set system\.\@system\[-1\]\.timezone='UTC'/set system\.\@system\[-1\]\.timezone='Asia\/Shanghai'/" package/base-files/files/bin/config_generate
 
-# 克隆luci-app-zerotier
-git clone --depth=1 https://github.com/mmc1987/luci-app-zerotier.git feeds/luci/applications/luci-app-zerotier
 
-# 克隆luci-app-easytier
-git clone --depth=1 https://github.com/EasyTier/luci-app-easytier.git feeds/luci/applications/luci-app-easytier
 
 # 更新和安装feeds
 # ./scripts/feeds update -f luci
