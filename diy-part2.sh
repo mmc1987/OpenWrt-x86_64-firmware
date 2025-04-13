@@ -20,9 +20,14 @@ git clone --depth=1 https://github.com/mmc1987/luci-app-zerotier.git feeds/luci/
 git clone --depth=1 https://github.com/EasyTier/luci-app-easytier.git feeds/luci/applications/luci-app-easytier
 
 # 更新和安装feeds
-./scripts/feeds update -f luci
-./scripts/feeds install -p luci -f luci-app-zerotier
-./scripts/feeds install -p luci -f luci-app-easytier
+# ./scripts/feeds update -f luci
+# ./scripts/feeds install -p luci -f luci-app-zerotier
+# ./scripts/feeds install -p luci -f luci-app-easytier
+
+./scripts/feeds update -a
+./scripts/feeds install -a
+./scripts/feeds install -a
+
 make defconfig
 
 # 克隆私有仓库
