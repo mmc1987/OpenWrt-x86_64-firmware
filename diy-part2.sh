@@ -26,7 +26,7 @@ git clone --depth=1 https://github.com/EasyTier/luci-app-easytier.git feeds/luci
 
 ./scripts/feeds update -a
 ./scripts/feeds install -a
-./scripts/feeds install -a
+# ./scripts/feeds install -a
 
 make defconfig
 
