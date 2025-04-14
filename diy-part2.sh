@@ -30,7 +30,12 @@ sed -i "s/set system\.\@system\[-1\]\.timezone='UTC'/set system\.\@system\[-1\]\
 # if [ -d "Openwrt_etc" ]; then
 #     rm -rf Openwrt_etc
 # fi
-mkdir files
+
+
+if [ ! -d "files" ]; then
+    mkdir files
+fi
+
 git clone "https://${REPO_TOKEN}@github.com/mmc1987/Openwrt_etc.git"
 cp -rv Openwrt_etc/backup-OpenWrt/* files/
 rm -rf Openwrt_etc
