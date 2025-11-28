@@ -1,7 +1,7 @@
 #
 # https://github.com/P3TERX/Actions-OpenWrt
 #
-# File: .github/workflows/openwrt-bulder.yml
+# File: .github/workflows/openwrt-builder.yml
 # Description: Build OpenWrt using GitHub Actions
 #
 # Copyright (c) 2019-2024 P3TERX <https://p3terx.com>
@@ -45,7 +45,7 @@ jobs:
       run: echo "START_TIME=$(date +%s)" >> $GITHUB_ENV
     
     - name: Checkout
-      uses: actions/checkout@main
+      uses: actions/checkout@v4
 
     - name: Initialization environment
       env:
@@ -70,7 +70,8 @@ jobs:
           python3-distutils \
           unzip \
           wget \
-          zlib1g-dev
+          zlib1g-dev \
+          jq
         
         # 安装其他可选包（如果失败则继续）
         sudo apt-get -y install \
@@ -91,7 +92,7 @@ jobs:
         # 设置时区
         sudo timedatectl set-timezone "$TZ"
         sudo mkdir -p /workdir
-        sudo chown $USER:$GROUPS /workdir
+        sudo chown $USER:$USER /workdir
 
     - name: Clone source code
       working-directory: /workdir
@@ -146,7 +147,7 @@ jobs:
       run: df -hT
 
     - name: Upload bin directory
-      uses: actions/upload-artifact@main
+      uses: actions/upload-artifact@v4
       if: steps.compile.outputs.status == 'success' && env.UPLOAD_BIN_DIR == 'true'
       with:
         name: OpenWrt_bin${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}
@@ -162,7 +163,7 @@ jobs:
         echo "status=success" >> $GITHUB_OUTPUT
 
     - name: Upload firmware directory
-      uses: actions/upload-artifact@main
+      uses: actions/upload-artifact@v4
       if: steps.organize.outputs.status == 'success' && !cancelled()
       with:
         name: OpenWrt_firmware${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}
@@ -174,7 +175,6 @@ jobs:
       run: |
         echo "release_tag=$(date +"%Y.%m.%d-%H%M")" >> $GITHUB_OUTPUT
         touch release.txt
-        [ ${UPLOAD_GOFILE} = true && ${{ steps.gofile.outputs.url }} ] && echo "🔗 [GoFile](${{ steps.gofile.outputs.url }})" >> release.txt
         echo "status=success" >> $GITHUB_OUTPUT
 
     - name: Upload firmware to release
@@ -232,6 +232,10 @@ jobs:
 
     - name: Send Bark Notification
       if: always()  # Ensure this step always runs, regardless of the success or failure of previous steps
+      env:
+        REPO_BRANCH: ${{ env.REPO_BRANCH }}
+        START_TIME: ${{ env.START_TIME }}
+        END_TIME: ${{ env.END_TIME }}
       run: |
         urlencode() {
         local raw_url="$1"
@@ -241,14 +245,16 @@ jobs:
         echo "$encoded_url"
         }
       
-        START_TIME=${{ env.START_TIME }}
-        END_TIME=${{ env.END_TIME }}
-        ELAPSED_TIME=$((END_TIME - START_TIME))
+        if [ -z "$START_TIME" ] || [ -z "$END_TIME" ]; then
+          ELAPSED_TIME=0
+        else
+          ELAPSED_TIME=$((END_TIME - START_TIME))
+        fi
         
         DATE=$(date +"%Y%m%d%H%M")
         
         if [[ "${{ steps.compile.outputs.status }}" == "success" ]]; then
-          MESSAGE="构建完成%0a日期:$DATE%0a分支:$REPO_BRANCH%0a耗时:$ELAPSED_TIME"
+          MESSAGE="构建完成%0a日期:$DATE%0a分支:$REPO_BRANCH%0a耗时:${ELAPSED_TIME}秒"
           curl -s "https://api.day.app/J5xsjQ9PMoSgzaUwymg4yj/编译完成/$MESSAGE"
         else
           MESSAGE="构建失败%0a日期:$DATE"
