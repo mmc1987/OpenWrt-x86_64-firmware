@@ -85,15 +85,20 @@ jobs:
           echo "::warning::Failed to clone $CONFIG_REPO_URL. Skipping private files overlay."
           exit 0
         fi
-        if [ -d "private-config/$CONFIG_REPO_PATH/etc" ]; then
-          mkdir -p openwrt/files
-          rsync -a --exclude='.git' --exclude='.DS_Store' "private-config/$CONFIG_REPO_PATH/" openwrt/files/
-        elif [ -d "private-config/etc" ]; then
-          mkdir -p openwrt/files
-          rsync -a --exclude='.git' --exclude='.DS_Store' private-config/ openwrt/files/
+        # Prefer the firmware source tree at repo root (etc/); fall back to the
+        # router snapshot under $CONFIG_REPO_PATH/etc/ for legacy layouts.
+        if [ -d "private-config/etc" ]; then
+          SRC="private-config/etc"
+        elif [ -n "$CONFIG_REPO_PATH" ] && [ -d "private-config/$CONFIG_REPO_PATH/etc" ]; then
+          SRC="private-config/$CONFIG_REPO_PATH/etc"
         else
           echo "::warning::No OpenWrt files overlay found in private config repo. Skipping private files overlay."
+          rm -rf private-config
+          exit 0
         fi
+        echo "Using overlay source: $SRC"
+        mkdir -p openwrt/files/etc
+        rsync -a --exclude='.git' --exclude='.DS_Store' "$SRC/" openwrt/files/etc/
         rm -rf private-config
 
     - name: Load custom configuration
