@@ -28,16 +28,22 @@ env:
   DIY_P2_SH: diy-part2.sh
   UPLOAD_BIN_DIR: false
   UPLOAD_FIRMWARE: true
+  # 固件里烧着 Openwrt_etc 注入的 WireGuard/ZeroTier/DDNS/PPPoE 凭据，
+  # 所以 release 以草稿形式发布：只有你和协作者可见可下载，公开访客看不到。
+  # 仓库保持 public 是有意的——公开仓库的 Actions 分钟数与产物存储不计费。
   UPLOAD_RELEASE: true
   TZ: Asia/Shanghai
 
 jobs:
   build:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      actions: write
 
     steps:
     - name: Checkout
-      uses: actions/checkout@main
+      uses: actions/checkout@v4
 
     - name: Initialization environment
       env:
@@ -81,9 +87,9 @@ jobs:
           echo "::warning::CONFIG_REPO_TOKEN or ACTIONS_TRIGGER_PAT is not set. Skipping private files overlay."
           exit 0
         fi
-        if ! git clone --depth 1 -b "$CONFIG_REPO_BRANCH" "https://x-access-token:${CONFIG_REPO_TOKEN}@github.com/mmc1987/Openwrt_etc.git" private-config; then
-          echo "::warning::Failed to clone $CONFIG_REPO_URL. Skipping private files overlay."
-          exit 0
+        if ! git clone --depth 1 -b "$CONFIG_REPO_BRANCH" "https://x-access-token:${CONFIG_REPO_TOKEN}@github.com/mmc1987/Openwrt_etc.git" private-config 2>/dev/null; then
+          echo "::error::克隆 $CONFIG_REPO_URL 失败：token 无效、过期或对私有仓库无读权限"
+          exit 1
         fi
         # Prefer the firmware source tree at repo root (etc/); fall back to the
         # router snapshot under $CONFIG_REPO_PATH/etc/ for legacy layouts.
@@ -92,9 +98,9 @@ jobs:
         elif [ -n "$CONFIG_REPO_PATH" ] && [ -d "private-config/$CONFIG_REPO_PATH/etc" ]; then
           SRC="private-config/$CONFIG_REPO_PATH/etc"
         else
-          echo "::warning::No OpenWrt files overlay found in private config repo. Skipping private files overlay."
+          echo "::error::$CONFIG_REPO_URL 里既没有 etc/ 也没有 $CONFIG_REPO_PATH/etc/"
           rm -rf private-config
-          exit 0
+          exit 1
         fi
         echo "Using overlay source: $SRC"
         mkdir -p openwrt/files/etc
@@ -103,7 +109,9 @@ jobs:
 
     - name: Load custom configuration
       run: |
-        [ -e files ] && mv files openwrt/files
+        # 私有 overlay 已经建好 openwrt/files；这里必须合并而不是 mv，
+        # 否则 mv 会把仓库里的 files/ 塞成 openwrt/files/files/
+        [ -e files ] && rsync -a files/ openwrt/files/
         [ -e $CONFIG_FILE ] && mv $CONFIG_FILE openwrt/.config
         chmod +x $DIY_P2_SH
         cd openwrt
@@ -113,7 +121,10 @@ jobs:
       id: package
       run: |
         cd openwrt
+        cp .config .config.seed
         make defconfig
+        echo "=== defconfig 对 .config 的改动（上游改名/删包会静默丢包，看这里）==="
+        diff -a .config.seed .config | grep -E '^[<>] CONFIG_PACKAGE_' || true
         make download -j8
         find dl -size -1024c -exec ls -l {} \;
         find dl -size -1024c -exec rm -f {} \;
@@ -134,7 +145,7 @@ jobs:
       run: df -hT
 
     - name: Upload bin directory
-      uses: actions/upload-artifact@main
+      uses: actions/upload-artifact@v4
       if: steps.compile.outputs.status == 'success' && env.UPLOAD_BIN_DIR == 'true'
       with:
         name: OpenWrt_bin${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}
@@ -155,7 +166,7 @@ jobs:
         echo "status=success" >> $GITHUB_OUTPUT
 
     - name: Upload firmware directory
-      uses: actions/upload-artifact@main
+      uses: actions/upload-artifact@v4
       if: steps.organize.outputs.status == 'success' && !cancelled()
       with:
         name: OpenWrt_firmware${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}
@@ -166,28 +177,33 @@ jobs:
       if: steps.organize.outputs.status == 'success' && env.UPLOAD_RELEASE == 'true' && !cancelled()
       run: |
         echo "release_tag=$(date +"%Y.%m.%d-%H%M")" >> $GITHUB_OUTPUT
-        touch release.txt
+        {
+          echo "Source: $REPO_URL ($REPO_BRANCH)"
+          echo "Runner: $ImageVersion"
+          ls -1 "$FIRMWARE"
+        } > release.txt
         echo "status=success" >> $GITHUB_OUTPUT
 
     - name: Upload firmware to release
-      uses: softprops/action-gh-release@master
+      uses: softprops/action-gh-release@v2
       if: steps.organize.outputs.status == 'success' && steps.tag.outputs.status == 'success' && !cancelled()
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag_name: ${{ steps.tag.outputs.release_tag }}
         body_path: release.txt
+        draft: true
         files: ${{ env.FIRMWARE }}/*
 
     - name: Delete workflow runs
       uses: Mattraks/delete-workflow-runs@main
       with:
-        retain_days: 0
-        keep_minimum_runs: 2
+        retain_days: 7
+        keep_minimum_runs: 3
 
     - name: Remove old Releases
       uses: dev-drprasad/delete-older-releases@master
-      if: env.UPLOAD_RELEASE == 'true' && !cancelled()
+      if: steps.compile.outputs.status == 'success' && env.UPLOAD_RELEASE == 'true' && !cancelled()
       with:
         keep_latest: 3
         delete_tags: true
